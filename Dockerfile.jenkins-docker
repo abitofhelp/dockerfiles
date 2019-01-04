@@ -1,0 +1,44 @@
+# MUST BE A LINUX CONTAINER!!!
+#    There are the three crucial steps when running Jenkins inside docker:
+#    1) You mount the socket /var/run/docker.sock to the jenkins container in order to be able to use the docker from the host.
+#    2) You have to install docker inside the container in order to use it. This is a great and simple article on how to do that.
+#    3) You run sudo usermod -a -G docker jenkins in order to add jenkins to the docker group. However, here you might run into 
+#       a permission problem if the host docker and the container docker don't have the same group id so it is very important to 
+#       adjust the container docker's gid to be the same as the host docker gid.  You can do this as a part of a launch script 
+#       or simply by using exec and doing it manually: groupmod -g <YOUR_HOST_DOCKER_GID> docker.
+#    *** Do not change permissions of the /var/run/docker.sock to 777 or stuff like that because that is a big security risk.
+#
+# docker build -t abitofhelp/jenkins-withdocker:latest . -f Dockerfile.jenkins-docker
+# docker exec -it -u root jenkins bash
+# docker push abitofhelp/jenkins-withdocker:tagname
+
+# Stage 1, 
+FROM jenkins/jenkins:lts as builder  
+# jenkinsci/blueocean
+USER root
+
+# Install the latest Docker CE binaries
+RUN apt-get update && \
+    apt-get -y install sudo && \
+    apt-get -y install apt-transport-https \
+      ca-certificates \
+      curl \
+      gnupg2 \
+      software-properties-common && \
+    curl -fsSL https://download.docker.com/linux/$(. /etc/os-release; echo "$ID")/gpg > /tmp/dkey; apt-key add /tmp/dkey && \
+    add-apt-repository \
+      "deb [arch=amd64] https://download.docker.com/linux/$(. /etc/os-release; echo "$ID") \
+      $(lsb_release -cs) \
+      stable" && \
+   apt-get update && \
+   apt-get -y install docker-ce
+
+RUN sudo usermod -a -G docker jenkins
+#RUN reboot
+
+LABEL "com.abitofhelp.www"="A Bit of Help, Inc."
+LABEL "description"="This Docker Linux image contains the official jenkins/jenkins image and docker."
+LABEL "developers"="A Bit of Help, Inc. (www.abitofhelp.com)"
+LABEL "copyright"="Copyright © 2019 A Bit of Help, Inc.  All rights reserved."
+LABEL "license"="MIT License"
+

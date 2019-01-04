@@ -1,0 +1,29 @@
+version: '3.7'
+
+volumes:
+  jenkinsdata:
+    name: jenkinsdata
+    driver_opts:
+      type: none
+      device: /opt/jenkins
+      o: bind
+
+networks:
+  jenkinsnet:
+    external:
+      name: nat
+
+services:
+  jenkinsserver:
+    image: abitofhelp/jenkins-withdocker:latest 
+    container_name: jenkins
+    ports:
+      - 9080:8080
+      - 50000:50000
+    restart: always
+    networks:
+      - jenkinsnet
+    volumes:
+      - jenkinsdata:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - $HOME:/home
